@@ -1,2 +1,166 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Quicksand:wght@300..700&family=JetBrains+Mono:wght@400..600&display=swap');
 @import "tailwindcss";
+
+/* Class-based dark mode: toggle `dark` on <html> */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------- Design tokens (light) ---------- */
+:root {
+  --bg: oklch(0.985 0.002 260);
+  --surface: oklch(1 0 0);
+  --surface-2: oklch(0.97 0.004 260);
+  --border: oklch(0.92 0.006 260);
+  --border-strong: oklch(0.86 0.01 260);
+
+  --fg: oklch(0.21 0.02 265);
+  --fg-muted: oklch(0.45 0.02 265);
+  --fg-subtle: oklch(0.6 0.015 265);
+
+  --accent: oklch(0.52 0.2 270);
+  --accent-hover: oklch(0.46 0.2 270);
+  --accent-soft: oklch(0.95 0.03 270);
+  --accent-fg: oklch(1 0 0);
+
+  --success: oklch(0.55 0.15 150);
+  --success-soft: oklch(0.96 0.04 150);
+  --warning: oklch(0.62 0.15 75);
+  --warning-soft: oklch(0.97 0.05 85);
+  --danger: oklch(0.55 0.21 25);
+  --danger-soft: oklch(0.96 0.03 25);
+  --info: oklch(0.55 0.14 240);
+  --info-soft: oklch(0.96 0.03 240);
+  --blocked: oklch(0.5 0.2 310);       /* "blocked by policy" */
+  --blocked-soft: oklch(0.95 0.04 310);
+
+  --ring: oklch(0.52 0.2 270 / 0.45);
+  --shadow-card: 0 1px 2px oklch(0.2 0.02 265 / 0.04);
+  --shadow-pop: 0 8px 30px oklch(0.2 0.02 265 / 0.12);
+}
+
+/* ---------- Dark ---------- */
+.dark {
+  --bg: oklch(0.16 0.012 265);
+  --surface: oklch(0.2 0.014 265);
+  --surface-2: oklch(0.24 0.015 265);
+  --border: oklch(0.29 0.015 265);
+  --border-strong: oklch(0.37 0.018 265);
+
+  --fg: oklch(0.96 0.005 265);
+  --fg-muted: oklch(0.75 0.015 265);
+  --fg-subtle: oklch(0.6 0.015 265);
+
+  --accent: oklch(0.7 0.16 270);
+  --accent-hover: oklch(0.76 0.15 270);
+  --accent-soft: oklch(0.28 0.06 270);
+  --accent-fg: oklch(0.16 0.012 265);
+
+  --success: oklch(0.75 0.16 150);
+  --success-soft: oklch(0.27 0.05 150);
+  --warning: oklch(0.8 0.15 80);
+  --warning-soft: oklch(0.29 0.05 80);
+  --danger: oklch(0.72 0.18 25);
+  --danger-soft: oklch(0.28 0.06 25);
+  --info: oklch(0.74 0.13 240);
+  --info-soft: oklch(0.27 0.05 240);
+  --blocked: oklch(0.76 0.16 310);
+  --blocked-soft: oklch(0.28 0.06 310);
+
+  --ring: oklch(0.7 0.16 270 / 0.5);
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-pop: 0 8px 30px oklch(0 0 0 / 0.5);
+}
+
+/* ---------- Map tokens to Tailwind utilities ---------- */
+@theme inline {
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Quicksand", "Manrope", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-fg: var(--fg);
+  --color-muted: var(--fg-muted);
+  --color-subtle: var(--fg-subtle);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-fg: var(--accent-fg);
+
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-blocked: var(--blocked);
+  --color-blocked-soft: var(--blocked-soft);
+
+  --radius-card: 0.75rem;
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+}
+
+/* ---------- Base ---------- */
+html {
+  scroll-behavior: smooth;
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3 {
+  letter-spacing: -0.015em;
+  font-weight: 650;
+}
+
+code, kbd, pre, .font-mono {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Thin, unobtrusive scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

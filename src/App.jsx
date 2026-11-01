@@ -1,13 +1,15 @@
+import { ThemeToggle } from "./components/ui/ThemeToggle";
 
 
 function App() {
 
   return (
-    <>
-      <section>
-        <h1 className="text-3xl font-bold underline">Hello world!</h1>
-      </section>
-    </>
+      <div className="p-8">
+
+        {/* <h1 className="text-3xl font-bold underline">Hello world!</h1> */}
+
+        <ThemeToggle/>
+      </div>
   );
 }
 

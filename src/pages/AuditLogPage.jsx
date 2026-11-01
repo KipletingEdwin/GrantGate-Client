@@ -1,8 +1,17 @@
 
-import React from 'react'
+import { PageHeader } from '../components/layout/PageHeader'
+import { Card, CardBody } from '../components/ui'
 
-export const AuditLogPage = () => {
+export default function AuditLogPage() {
   return (
-    <div>AuditLogPage</div>
+    <>
+      <PageHeader
+        title="Audit log"
+        description="Every action on every request, in order."
+      />
+      <Card>
+        <CardBody className="text-muted">The event timeline will go here.</CardBody>
+      </Card>
+    </>
   )
 }

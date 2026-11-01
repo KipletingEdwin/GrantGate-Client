@@ -1,35 +1,34 @@
 
-import { Loader2 } from 'lucide-react'
-import { cn } from '../../lib/cn'
+import { Loader2 } from "lucide-react";
+import { cn } from "../../lib/cn";
 
 const variants = {
   primary:
-    'bg-accent text-accent-fg hover:bg-accent-hover border border-transparent',
+    "bg-accent text-accent-fg hover:bg-accent-hover border border-transparent",
   secondary:
-    'bg-surface text-fg border border-border-strong hover:bg-surface-2',
+    "bg-surface text-fg border border-border-strong hover:bg-surface-2",
   ghost:
-    'bg-transparent text-muted border border-transparent hover:bg-surface-2 hover:text-fg',
-  danger:
-    'bg-danger text-accent-fg border border-transparent hover:opacity-90',
+    "bg-transparent text-muted border border-transparent hover:bg-surface-2 hover:text-fg",
+  danger: "bg-danger text-accent-fg border border-transparent hover:opacity-90",
   success:
-    'bg-success text-accent-fg border border-transparent hover:opacity-90',
-}
+    "bg-success text-accent-fg border border-transparent hover:opacity-90",
+};
 
 const sizes = {
-  sm: 'h-8 px-3 text-sm gap-1.5',
-  md: 'h-9 px-4 text-sm gap-2',
-  lg: 'h-11 px-5 text-base gap-2',
-  icon: 'h-9 w-9 justify-center',
-}
+  sm: "h-8 px-3 text-sm gap-1.5",
+  md: "h-9 px-4 text-sm gap-2",
+  lg: "h-11 px-5 text-base gap-2",
+  icon: "h-9 w-9 justify-center",
+};
 
 export function Button({
-  variant = 'primary',
-  size = 'md',
+  variant = "primary",
+  size = "md",
   loading = false,
   disabled = false,
   className,
   children,
-  type = 'button',
+  type = "button",
   ...props
 }) {
   return (
@@ -38,17 +37,17 @@ export function Button({
       disabled={disabled || loading}
       aria-busy={loading || undefined}
       className={cn(
-        'inline-flex items-center font-semibold rounded-lg cursor-pointer select-none',
-        'transition-colors duration-150',
-        'disabled:cursor-not-allowed disabled:opacity-50',
+        "inline-flex items-center font-semibold rounded-lg cursor-pointer select-none",
+        "transition-colors duration-150",
+        "disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],
         sizes[size],
-        className
+        className,
       )}
       {...props}
     >
       {loading && <Loader2 size={16} className="animate-spin" aria-hidden />}
       {children}
     </button>
-  )
+  );
 }

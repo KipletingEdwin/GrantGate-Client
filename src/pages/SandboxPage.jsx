@@ -1,8 +1,17 @@
 
-import React from 'react'
+import { PageHeader } from '../components/layout/PageHeader'
+import { Card, CardBody } from '../components/ui'
 
-export const SandboxPage = () => {
+export default function SandboxPage() {
   return (
-    <div>SandboxPage</div>
+    <>
+      <PageHeader
+        title="Sandbox"
+        description="Type your own request and watch the agent handle it."
+      />
+      <Card>
+        <CardBody className="text-muted">The sandbox form will go here.</CardBody>
+      </Card>
+    </>
   )
 }

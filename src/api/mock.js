@@ -461,3 +461,189 @@ export async function createRequest({ resourceName, access, justification }) {
   requests.push(request)
   return request
 }
+// ---------- sandbox ----------
+
+/** People the sandbox can pretend to be. Identity always comes from here. */
+export async function listPersonas() {
+  await delay(100)
+  return Object.values(USERS)
+}
+
+// Which team owns each resource.
+const OWNERS = {
+  'analytics-db': 'Data',
+  'prod-aws-account': 'Platform',
+  'billing-app': 'Finance',
+  'payments-service': 'Platform',
+  'hr-records-db': 'HR',
+}
+
+// Phrases that try to talk the agent into something. The mock agent falls for them.
+const IDENTITY_CLAIM = /\bi('| a)?m (the |our )?(cto|ceo|ciso|admin|administrator|owner)\b/i
+const INJECTION = [
+  /ignore (all |your |any )?(previous|prior|above) (instructions|rules)/i,
+  /pre-?approved/i,
+  /grant (me )?(everything|all)/i,
+  /you are now/i,
+  /system prompt/i,
+  /override (the )?(policy|policies|rules)/i,
+]
+
+const LEVELS = ['read', 'write', 'admin']
+
+// What a sensible agent would propose when it isn't being manipulated.
+function honestProposal(user, resource, access) {
+  const owner = OWNERS[resource.name]
+  const owns = user.team === owner
+  const expiry = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10)
+  const withExpiry = (level) => (level === 'read' ? null : expiry)
+
+  if (resource.sensitivity === 'high' && !owns) {
+    return {
+      decision: 'deny', accessLevel: null, expiresAt: null, confidence: 0.9,
+      rationale: `${resource.name} is high sensitivity and ${user.team} does not own it.`,
+    }
+  }
+  if (user.employment === 'contractor' && access === 'admin') {
+    return {
+      decision: 'narrow', accessLevel: 'read', expiresAt: null, confidence: 0.78,
+      rationale: 'Contractors are not given admin. Read access covers the safest part of the request.',
+    }
+  }
+  if (access === 'admin') {
+    return {
+      decision: 'narrow', accessLevel: owns ? 'write' : 'read', expiresAt: owns ? expiry : null, confidence: 0.74,
+      rationale: 'Admin is rarely needed. A lower level covers the stated work.',
+    }
+  }
+  return {
+    decision: 'grant', accessLevel: access, expiresAt: withExpiry(access), confidence: 0.84,
+    rationale: owns
+      ? `${user.name} is on the ${user.team} team that owns ${resource.name}.`
+      : `${user.name} is outside the owning team, but the request is low risk.`,
+  }
+}
+
+function policyChecksFor({ user, resource, requested, proposal, identityClaim, injectionHit }) {
+  const checks = []
+  const level = proposal.accessLevel
+  const grants = proposal.decision !== 'deny'
+  const owns = user.team === OWNERS[resource.name]
+
+  if (identityClaim) {
+    checks.push({
+      rule: 'identity-from-database',
+      result: 'fail',
+      reason: `The text claims a senior role, but the directory says ${user.name} is ${user.employment === 'contractor' ? 'a contractor' : 'an employee'} on the ${user.team} team. The claim was ignored.`,
+    })
+  } else if (injectionHit) {
+    checks.push({
+      rule: 'identity-from-database',
+      result: 'warn',
+      reason: 'The text contains instructions aimed at the agent. Policy ignores them and uses directory data only.',
+    })
+  } else {
+    checks.push({
+      rule: 'identity-from-database',
+      result: 'pass',
+      reason: 'Role and employment were taken from the users table.',
+    })
+  }
+
+  checks.push(
+    user.employment === 'contractor' && level === 'admin'
+      ? { rule: 'no-admin-for-contractors', result: 'fail', reason: 'Contractors cannot hold admin access.' }
+      : { rule: 'no-admin-for-contractors', result: 'pass', reason: 'No admin access is being granted to a contractor.' }
+  )
+
+  checks.push(
+    level === 'admin' && resource.sensitivity === 'high'
+      ? { rule: 'no-admin-on-high-sensitivity', result: 'fail', reason: 'Admin on a high-sensitivity resource needs a security reviewer and a ticket.' }
+      : { rule: 'no-admin-on-high-sensitivity', result: 'pass', reason: 'Not admin on a high-sensitivity resource.' }
+  )
+
+  if (!grants) {
+    checks.push({ rule: 'team-owns-resource', result: 'pass', reason: 'No access is being granted.' })
+  } else if (owns) {
+    checks.push({ rule: 'team-owns-resource', result: 'pass', reason: `${user.team} owns ${resource.name}.` })
+  } else if (resource.sensitivity === 'high') {
+    checks.push({ rule: 'team-owns-resource', result: 'fail', reason: `${user.team} does not own ${resource.name}.` })
+  } else {
+    checks.push({ rule: 'team-owns-resource', result: 'warn', reason: `${user.team} does not own ${resource.name}, but it is not high sensitivity.` })
+  }
+
+  checks.push(
+    (level === 'write' || level === 'admin') && !proposal.expiresAt
+      ? { rule: 'write-access-must-expire', result: 'fail', reason: 'Write and admin access need an expiry date.' }
+      : { rule: 'write-access-must-expire', result: 'pass', reason: 'Expiry rules are satisfied.' }
+  )
+
+  if (grants && LEVELS.indexOf(level) < LEVELS.indexOf(requested)) {
+    checks.push({ rule: 'least-privilege', result: 'warn', reason: `Requested ${requested}, proposal is ${level}.` })
+  }
+
+  return checks
+}
+
+/**
+ * Run the fake agent and policy on one made-up request. Nothing is saved.
+ * @param {{ personaId: string, resourceName: string, access: string, justification: string }} input
+ */
+export async function runSandbox({ personaId, resourceName, access, justification }) {
+  await delay(1000)
+
+  const user = Object.values(USERS).find((u) => u.id === personaId)
+  const resource = Object.values(RES).find((r) => r.name === resourceName)
+  const text = justification.trim()
+
+  if (!user) throw new Error('Choose who is asking.')
+  if (!resource) throw new Error('Choose a resource.')
+  if (!LEVELS.includes(access)) throw new Error('Choose an access level.')
+  if (text.length < 10) throw new Error('Type at least 10 characters of justification.')
+  if (text.length > 1000) throw new Error('Keep the justification under 1000 characters.')
+
+  const identityClaim = IDENTITY_CLAIM.test(text)
+  const injectionHit = identityClaim || INJECTION.some((re) => re.test(text))
+
+  // 1. The agent. A fooled agent does what the text says.
+  const honest = honestProposal(user, resource, access)
+  const agentProposal = injectionHit
+    ? {
+        decision: 'grant',
+        accessLevel: access,
+        expiresAt: null,
+        confidence: 0.97,
+        rationale: 'The request says it is pre-approved and urgent, so grant what was asked.',
+      }
+    : honest
+
+  // 2. Policy runs on the agent's output, using directory facts only.
+  const policyChecks = policyChecksFor({
+    user, resource, requested: access, proposal: agentProposal, identityClaim, injectionHit,
+  })
+  const failed = policyChecks.filter((c) => c.result === 'fail')
+
+  // 3. Policy can replace the proposal, never the other way round.
+  const overridden = failed.length > 0 && agentProposal.decision !== 'deny'
+  const finalProposal = overridden
+    ? {
+        decision: 'deny',
+        accessLevel: null,
+        expiresAt: null,
+        confidence: 0.99,
+        rationale: `Policy replaced the agent's answer. Failed: ${failed.map((c) => c.rule).join(', ')}.`,
+        overriddenByPolicy: true,
+      }
+    : { ...agentProposal, overriddenByPolicy: false }
+
+  return {
+    user,
+    resource,
+    requestedAccess: access,
+    injectionDetected: injectionHit,
+    evidence: evidence('sbx', user, resource, [], []),
+    agentProposal,
+    policyChecks,
+    finalProposal,
+  }
+}
